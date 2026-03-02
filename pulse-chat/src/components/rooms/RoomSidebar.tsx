@@ -2,28 +2,32 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Hash, Plus, LogOut } from "lucide-react";
+import { Hash, Plus, LogOut, Search } from "lucide-react";
 import type { RoomMemberWithRoom, Room } from "@/lib/types";
 import { CreateRoomModal } from "./CreateRoomModal";
 
 interface RoomSidebarProps {
   rooms: RoomMemberWithRoom[];
   allRooms: Room[];
+  unreadCounts: Record<string, number>;
   activeSlug: string | undefined;
   username: string;
   onCreateRoom: (name: string, description: string) => Promise<Room | null>;
   onJoinRoom: (roomId: string) => Promise<boolean>;
   onSignOut: () => Promise<void>;
+  onSearchClick: () => void;
 }
 
 export function RoomSidebar({
   rooms,
   allRooms,
+  unreadCounts,
   activeSlug,
   username,
   onCreateRoom,
   onJoinRoom,
   onSignOut,
+  onSearchClick,
 }: RoomSidebarProps) {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const router = useRouter();
@@ -36,6 +40,13 @@ export function RoomSidebar({
       {/* Header */}
       <div className="flex items-center justify-between border-b border-border p-4">
         <h2 className="text-lg font-bold text-text-primary">Pulse Chat</h2>
+        <button
+          onClick={onSearchClick}
+          className="text-text-muted hover:text-text-primary"
+          title="Search messages (Cmd+K)"
+        >
+          <Search className="h-4 w-4" />
+        </button>
       </div>
 
       {/* Joined rooms */}
@@ -43,20 +54,32 @@ export function RoomSidebar({
         <p className="mb-2 px-2 text-xs font-semibold uppercase text-text-muted">
           Rooms
         </p>
-        {rooms.map((membership) => (
-          <button
-            key={membership.rooms.id}
-            onClick={() => router.push(`/chat/${membership.rooms.slug}`)}
-            className={`flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm ${
-              activeSlug === membership.rooms.slug
-                ? "bg-bg-hover text-text-primary"
-                : "text-text-secondary hover:bg-bg-tertiary"
-            }`}
-          >
-            <Hash className="h-4 w-4 shrink-0" />
-            {membership.rooms.name}
-          </button>
-        ))}
+        {rooms.map((membership) => {
+          const unread = unreadCounts[membership.room_id] ?? 0;
+          const isActive = activeSlug === membership.rooms.slug;
+
+          return (
+            <button
+              key={membership.rooms.id}
+              onClick={() => router.push(`/chat/${membership.rooms.slug}`)}
+              className={`flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm ${
+                isActive
+                  ? "bg-bg-hover text-text-primary"
+                  : unread > 0
+                    ? "font-semibold text-text-primary hover:bg-bg-tertiary"
+                    : "text-text-secondary hover:bg-bg-tertiary"
+              }`}
+            >
+              <Hash className="h-4 w-4 shrink-0" />
+              <span className="flex-1 truncate">{membership.rooms.name}</span>
+              {unread > 0 && !isActive && (
+                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-unread px-1.5 text-xs font-bold text-white">
+                  {unread > 99 ? "99+" : unread}
+                </span>
+              )}
+            </button>
+          );
+        })}
 
         {/* Browse other rooms */}
         {unjoinedRooms.length > 0 && (

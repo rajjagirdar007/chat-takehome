@@ -28,14 +28,17 @@ export function usePresence(
     channel
       .on("presence", { event: "sync" }, () => {
         const state = channel.presenceState<PresenceState>();
-        // Flatten presence state: each key has an array of presences
-        const users: PresenceState[] = [];
+        // Deduplicate by user_id — a user can have multiple presences (e.g. multiple tabs)
+        const userMap = new Map<string, PresenceState>();
         for (const presences of Object.values(state)) {
           for (const presence of presences) {
-            users.push(presence);
+            const existing = userMap.get(presence.user_id);
+            if (!existing || presence.online_at > existing.online_at) {
+              userMap.set(presence.user_id, presence);
+            }
           }
         }
-        setOnlineUsers(users);
+        setOnlineUsers(Array.from(userMap.values()));
       })
       .subscribe(async (status) => {
         if (status === "SUBSCRIBED") {

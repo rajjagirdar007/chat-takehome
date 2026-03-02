@@ -8,6 +8,7 @@ import { slugify } from "@/lib/utils";
 interface UseRoomsReturn {
   rooms: RoomMemberWithRoom[];
   allRooms: Room[];
+  unreadCounts: Record<string, number>;
   loading: boolean;
   createRoom: (name: string, description: string) => Promise<Room | null>;
   joinRoom: (roomId: string) => Promise<boolean>;
@@ -18,8 +19,32 @@ interface UseRoomsReturn {
 export function useRooms(userId: string | undefined): UseRoomsReturn {
   const [rooms, setRooms] = useState<RoomMemberWithRoom[]>([]);
   const [allRooms, setAllRooms] = useState<Room[]>([]);
+  const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
+
+  const fetchUnreadCounts = useCallback(
+    async (memberships: RoomMemberWithRoom[]) => {
+      const counts: Record<string, number> = {};
+
+      // Fetch unread count for each room in parallel
+      await Promise.all(
+        memberships.map(async (membership) => {
+          const { count } = await supabase
+            .from("messages")
+            .select("*", { count: "exact", head: true })
+            .eq("room_id", membership.room_id)
+            .eq("is_deleted", false)
+            .gt("created_at", membership.last_read_at);
+
+          counts[membership.room_id] = count ?? 0;
+        })
+      );
+
+      setUnreadCounts(counts);
+    },
+    [supabase]
+  );
 
   const fetchRooms = useCallback(async () => {
     if (!userId) return;
@@ -31,7 +56,9 @@ export function useRooms(userId: string | undefined): UseRoomsReturn {
       .eq("user_id", userId);
 
     if (memberRooms) {
-      setRooms(memberRooms as RoomMemberWithRoom[]);
+      const typed = memberRooms as RoomMemberWithRoom[];
+      setRooms(typed);
+      fetchUnreadCounts(typed);
     }
 
     // Fetch all rooms (for "browse rooms" / join)
@@ -45,13 +72,13 @@ export function useRooms(userId: string | undefined): UseRoomsReturn {
     }
 
     setLoading(false);
-  }, [userId, supabase]);
+  }, [userId, supabase, fetchUnreadCounts]);
 
   useEffect(() => {
     fetchRooms();
 
-    // Subscribe to room_members changes for live updates
-    const channel = supabase
+    // Subscribe to room_members changes for live sidebar updates
+    const memberChannel = supabase
       .channel("room-members-changes")
       .on(
         "postgres_changes",
@@ -62,8 +89,26 @@ export function useRooms(userId: string | undefined): UseRoomsReturn {
       )
       .subscribe();
 
+    // Subscribe to ALL new messages to update unread badges live
+    const messageChannel = supabase
+      .channel("all-messages-unread")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "messages" },
+        (payload) => {
+          const roomId = payload.new.room_id as string;
+          // Increment unread count for the room that got a new message
+          setUnreadCounts((prev) => ({
+            ...prev,
+            [roomId]: (prev[roomId] ?? 0) + 1,
+          }));
+        }
+      )
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(memberChannel);
+      supabase.removeChannel(messageChannel);
     };
   }, [fetchRooms, supabase]);
 
@@ -137,6 +182,7 @@ export function useRooms(userId: string | undefined): UseRoomsReturn {
   return {
     rooms,
     allRooms,
+    unreadCounts,
     loading,
     createRoom,
     joinRoom,

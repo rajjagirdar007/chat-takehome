@@ -82,9 +82,9 @@ export default function RoomPage() {
   }
 
   return (
-    <div className="flex flex-1">
+    <div className="flex min-h-0 flex-1">
       {/* Main chat area */}
-      <div className="flex flex-1 flex-col">
+      <div className="flex min-h-0 flex-1 flex-col">
         {/* Room header */}
         <div className="flex items-center gap-2 border-b border-border bg-bg-secondary px-4 py-3">
           <Hash className="h-5 w-5 text-text-muted" />

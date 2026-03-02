@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { hashToken } from "@/lib/hash";
 
 // --- Types ---
 
@@ -23,15 +24,6 @@ interface AutomationToken {
 }
 
 // --- Helpers ---
-
-/** SHA-256 hash the token as a UTF-8 string. Must match: encode(sha256('token'::bytea), 'hex') in Postgres. */
-async function hashToken(token: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(token);
-  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
-}
 
 /** Standard error response shape. */
 function errorResponse(

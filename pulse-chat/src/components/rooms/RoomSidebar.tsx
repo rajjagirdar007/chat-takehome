@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Hash, Plus, LogOut, Search, Lock } from "lucide-react";
+import { Hash, Plus, LogOut, Search, Lock, Settings } from "lucide-react";
 import type { RoomMemberWithRoom, Room } from "@/lib/types";
 import { CreateRoomModal } from "./CreateRoomModal";
 import { NewDmModal } from "./NewDmModal";
@@ -194,13 +194,22 @@ export function RoomSidebar({
         <span className="text-sm font-medium text-text-primary">
           {username}
         </span>
-        <button
-          onClick={onSignOut}
-          className="text-text-muted hover:text-text-primary"
-          title="Sign out"
-        >
-          <LogOut className="h-4 w-4" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => router.push("/chat/settings")}
+            className="text-text-muted hover:text-text-primary"
+            title="Settings"
+          >
+            <Settings className="h-4 w-4" />
+          </button>
+          <button
+            onClick={onSignOut}
+            className="text-text-muted hover:text-text-primary"
+            title="Sign out"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
+        </div>
       </div>
 
       {showCreateModal && (

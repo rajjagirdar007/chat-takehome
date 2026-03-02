@@ -37,6 +37,12 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const pathname = request.nextUrl.pathname;
+
+  // API routes using bearer tokens don't need session redirects
+  if (pathname.startsWith("/api/v1/automation/messages")) {
+    return supabaseResponse;
+  }
+
   const isAuthPage = pathname === "/login" || pathname === "/signup";
   const isProtectedPage = pathname.startsWith("/chat");
 
@@ -59,8 +65,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Run on all routes except static files and API routes.
-    // API routes use bearer token auth, not Supabase sessions.
-    "/((?!_next/static|_next/image|favicon.ico|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    // Run on all routes except static files.
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

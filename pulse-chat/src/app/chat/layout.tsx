@@ -13,7 +13,15 @@ export default function ChatLayout({
   children: React.ReactNode;
 }) {
   const { user, profile, loading: authLoading, signOut } = useAuth();
-  const { rooms, allRooms, unreadCounts, createRoom, joinRoom } = useRooms(user?.id);
+  const {
+    rooms,
+    allRooms,
+    unreadCounts,
+    dmPartnerNames,
+    createRoom,
+    joinRoom,
+    createOrGetDm,
+  } = useRooms(user?.id);
   const pathname = usePathname();
   const [showSearch, setShowSearch] = useState(false);
 
@@ -51,10 +59,13 @@ export default function ChatLayout({
         rooms={rooms}
         allRooms={allRooms}
         unreadCounts={unreadCounts}
+        dmPartnerNames={dmPartnerNames}
         activeSlug={activeSlug}
         username={profile.username}
+        currentUserId={user.id}
         onCreateRoom={createRoom}
         onJoinRoom={joinRoom}
+        onCreateOrGetDm={createOrGetDm}
         onSignOut={signOut}
         onSearchClick={() => setShowSearch(true)}
       />

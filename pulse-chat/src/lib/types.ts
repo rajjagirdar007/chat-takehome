@@ -15,6 +15,7 @@ export interface Room {
   description: string;
   slug: string;
   is_direct: boolean;
+  is_private: boolean;
   created_by: string | null;
   created_at: string;
 }
@@ -48,6 +49,14 @@ export interface MessageWithProfile extends Message {
 // Room membership with joined room data
 export interface RoomMemberWithRoom extends RoomMember {
   rooms: Room;
+}
+
+// Metadata attached to file/image messages
+export interface FileMetadata {
+  file_url: string;
+  file_name: string;
+  file_size: number;
+  file_type: string; // MIME type, e.g. "image/png" or "application/pdf"
 }
 
 // Presence state tracked via Supabase Realtime

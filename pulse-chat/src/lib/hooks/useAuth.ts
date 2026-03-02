@@ -24,7 +24,7 @@ export function useAuth(): AuthState {
         .from("profiles")
         .select("*")
         .eq("id", userId)
-        .single();
+        .maybeSingle();
       setProfile(data);
     },
     [supabase]

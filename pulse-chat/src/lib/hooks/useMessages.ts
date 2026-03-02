@@ -2,12 +2,15 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
-import type { MessageWithProfile } from "@/lib/types";
+import type { MessageWithProfile, FileMetadata } from "@/lib/types";
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 interface UseMessagesReturn {
   messages: MessageWithProfile[];
   loading: boolean;
   sendMessage: (content: string) => Promise<boolean>;
+  sendFileMessage: (file: File, caption?: string) => Promise<boolean>;
   loadMore: () => Promise<void>;
   hasMore: boolean;
 }
@@ -78,7 +81,7 @@ export function useMessages(
             .from("profiles")
             .select("username, avatar_color")
             .eq("id", newMessage.user_id!)
-            .single();
+            .maybeSingle();
 
           newMessage.profiles = profile;
 
@@ -129,6 +132,56 @@ export function useMessages(
     [roomId, userId, supabase]
   );
 
+  const sendFileMessage = useCallback(
+    async (file: File, caption?: string): Promise<boolean> => {
+      if (!roomId || !userId) return false;
+
+      if (file.size > MAX_FILE_SIZE) {
+        console.error("File too large. Maximum size is 10MB.");
+        return false;
+      }
+
+      // Sanitize filename for Supabase Storage — it rejects spaces and unicode
+      const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
+      const filePath = `${roomId}/${Date.now()}-${safeName}`;
+      const { error: uploadError } = await supabase.storage
+        .from("chat-files")
+        .upload(filePath, file);
+
+      if (uploadError) {
+        console.error("Failed to upload file:", uploadError.message);
+        return false;
+      }
+
+      const { data: urlData } = supabase.storage
+        .from("chat-files")
+        .getPublicUrl(filePath);
+
+      const isImage = file.type.startsWith("image/");
+      const metadata: FileMetadata = {
+        file_url: urlData.publicUrl,
+        file_name: file.name,
+        file_size: file.size,
+        file_type: file.type,
+      };
+
+      const { error: insertError } = await supabase.from("messages").insert({
+        room_id: roomId,
+        user_id: userId,
+        content: caption || file.name,
+        type: isImage ? "image" : "file",
+        metadata,
+      });
+
+      if (insertError) {
+        console.error("Failed to send file message:", insertError.message);
+        return false;
+      }
+      return true;
+    },
+    [roomId, userId, supabase]
+  );
+
   const loadMore = useCallback(async () => {
     if (!roomId || messages.length === 0) return;
 
@@ -149,5 +202,5 @@ export function useMessages(
     }
   }, [roomId, messages, supabase]);
 
-  return { messages, loading, sendMessage, loadMore, hasMore };
+  return { messages, loading, sendMessage, sendFileMessage, loadMore, hasMore };
 }

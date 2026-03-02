@@ -38,3 +38,23 @@ export function formatDayDivider(dateString: string): string {
 export function getInitial(username: string): string {
   return username.charAt(0).toUpperCase();
 }
+
+/**
+ * Creates a deterministic DM room slug from two user IDs.
+ * Sorts UUIDs lexicographically so the same pair always produces the same slug.
+ */
+export function createDmSlug(userId1: string, userId2: string): string {
+  const sorted = [userId1, userId2].sort();
+  return `dm--${sorted[0]}--${sorted[1]}`;
+}
+
+/**
+ * Formats a byte count into a human-readable file size string.
+ * e.g. 1024 -> "1.0 KB", 1048576 -> "1.0 MB"
+ */
+export function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+}

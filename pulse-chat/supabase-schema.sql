@@ -41,6 +41,7 @@ CREATE TABLE public.rooms (
   description TEXT DEFAULT '',
   slug TEXT UNIQUE NOT NULL,
   is_direct BOOLEAN DEFAULT false,
+  is_private BOOLEAN DEFAULT false,
   created_by UUID REFERENCES public.profiles(id),
   created_at TIMESTAMPTZ DEFAULT now()
 );

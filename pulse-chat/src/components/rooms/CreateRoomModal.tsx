@@ -1,33 +1,49 @@
 "use client";
 
-import { useState } from "react";
-import { X } from "lucide-react";
+import { useState, useEffect } from "react";
+import { X, Lock } from "lucide-react";
 
 interface CreateRoomModalProps {
   onClose: () => void;
-  onCreate: (name: string, description: string) => Promise<void>;
+  onCreate: (name: string, description: string, isPrivate: boolean) => Promise<void>;
 }
 
 export function CreateRoomModal({ onClose, onCreate }: CreateRoomModalProps) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [isPrivate, setIsPrivate] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  // Close on Escape key
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) return;
 
     setLoading(true);
-    await onCreate(name.trim(), description.trim());
+    await onCreate(name.trim(), description.trim(), isPrivate);
     setLoading(false);
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="w-full max-w-md rounded-lg bg-bg-secondary p-6">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-md rounded-lg bg-bg-secondary p-6"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-lg font-semibold text-text-primary">
-            Create Room
+            Create Channel
           </h3>
           <button
             onClick={onClose}
@@ -40,7 +56,7 @@ export function CreateRoomModal({ onClose, onCreate }: CreateRoomModalProps) {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="mb-1 block text-sm text-text-secondary">
-              Room Name
+              Channel Name
             </label>
             <input
               type="text"
@@ -62,9 +78,22 @@ export function CreateRoomModal({ onClose, onCreate }: CreateRoomModalProps) {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="w-full rounded bg-bg-tertiary p-2 text-text-primary outline-none focus:ring-2 focus:ring-accent"
-              placeholder="What's this room about?"
+              placeholder="What's this channel about?"
             />
           </div>
+
+          <label className="flex cursor-pointer items-center gap-2">
+            <input
+              type="checkbox"
+              checked={isPrivate}
+              onChange={(e) => setIsPrivate(e.target.checked)}
+              className="h-4 w-4 rounded border-border accent-accent"
+            />
+            <Lock className="h-4 w-4 text-text-muted" />
+            <span className="text-sm text-text-secondary">
+              Private channel — invite only
+            </span>
+          </label>
 
           <div className="flex justify-end gap-2">
             <button

@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-bg-primary: #1a1d21;
+  --color-bg-secondary: #222529;
+  --color-bg-tertiary: #2c2f33;
+  --color-bg-hover: #35393f;
+  --color-text-primary: #f5f5f5;
+  --color-text-secondary: #b9bbbe;
+  --color-text-muted: #72767d;
+  --color-accent: #6366f1;
+  --color-accent-hover: #5558e6;
+  --color-border: #3a3d42;
+  --color-online: #44b700;
+  --color-away: #f5a623;
+  --color-offline: #747f8d;
+  --color-unread: #e74c3c;
+  --color-message-own: #2b4a7c;
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+}
+
+/* Custom scrollbar for dark theme */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-bg-hover);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
+}
+
+/* Typing indicator animation */
+@keyframes typing-dot {
+  0%, 60%, 100% { opacity: 0.3; }
+  30% { opacity: 1; }
+}
+
+.typing-dot:nth-child(1) { animation: typing-dot 1.4s infinite 0s; }
+.typing-dot:nth-child(2) { animation: typing-dot 1.4s infinite 0.2s; }
+.typing-dot:nth-child(3) { animation: typing-dot 1.4s infinite 0.4s; }
